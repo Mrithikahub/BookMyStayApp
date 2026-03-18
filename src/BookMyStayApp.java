@@ -5,24 +5,19 @@ class RoomInventory {
 
     HashMap<String, Integer> inventory = new HashMap<>();
 
-    // constructor to initialize data
     RoomInventory() {
         inventory.put("Single Room", 5);
         inventory.put("Double Room", 3);
-        inventory.put("Suite Room", 2);
+        inventory.put("Suite Room", 0); // unavailable
     }
 
-    void displayInventory() {
-        System.out.println("Room Availability:");
-
-        for(String key : inventory.keySet()) {
-            System.out.println(key + " -> " + inventory.get(key));
-        }
+    HashMap<String, Integer> getInventory() {
+        return inventory;
     }
 }
 
-// Abstract Room
-abstract class Room {
+// Room class
+class Room {
     String type;
     int price;
 
@@ -31,37 +26,26 @@ abstract class Room {
         this.price = price;
     }
 
-    abstract void display();
-}
-
-// Room types
-class SingleRoom extends Room {
-    SingleRoom() {
-        super("Single Room", 1000);
-    }
-
     void display() {
         System.out.println(type + " - ₹" + price);
     }
 }
 
-class DoubleRoom extends Room {
-    DoubleRoom() {
-        super("Double Room", 2000);
-    }
+// Search service
+class SearchService {
 
-    void display() {
-        System.out.println(type + " - ₹" + price);
-    }
-}
+    void searchAvailableRooms(HashMap<String, Integer> inventory) {
 
-class SuiteRoom extends Room {
-    SuiteRoom() {
-        super("Suite Room", 5000);
-    }
+        System.out.println("Available Rooms:");
 
-    void display() {
-        System.out.println(type + " - ₹" + price);
+        for(String key : inventory.keySet()) {
+
+            int available = inventory.get(key);
+
+            if(available > 0) {
+                System.out.println(key + " -> Available: " + available);
+            }
+        }
     }
 }
 
@@ -69,10 +53,10 @@ class SuiteRoom extends Room {
 public class BookMyStayApp {
     public static void main(String[] args) {
 
-        System.out.println("Welcome to Book My Stay App");
-
         RoomInventory inventory = new RoomInventory();
 
-        inventory.displayInventory();
+        SearchService search = new SearchService();
+
+        search.searchAvailableRooms(inventory.getInventory());
     }
 }
