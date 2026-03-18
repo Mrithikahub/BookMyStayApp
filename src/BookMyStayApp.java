@@ -1,50 +1,31 @@
-import java.util.HashMap;
+import java.util.*;
 
-// Inventory class
-class RoomInventory {
+// Reservation class
+class Reservation {
+    String customerName;
+    String roomType;
 
-    HashMap<String, Integer> inventory = new HashMap<>();
-
-    RoomInventory() {
-        inventory.put("Single Room", 5);
-        inventory.put("Double Room", 3);
-        inventory.put("Suite Room", 0); // unavailable
-    }
-
-    HashMap<String, Integer> getInventory() {
-        return inventory;
+    Reservation(String customerName, String roomType) {
+        this.customerName = customerName;
+        this.roomType = roomType;
     }
 }
 
-// Room class
-class Room {
-    String type;
-    int price;
+// Booking Queue
+class BookingQueue {
 
-    Room(String type, int price) {
-        this.type = type;
-        this.price = price;
+    Queue<Reservation> queue = new LinkedList<>();
+
+    void addRequest(Reservation r) {
+        queue.add(r);
+        System.out.println("Added booking request for " + r.customerName);
     }
 
-    void display() {
-        System.out.println(type + " - ₹" + price);
-    }
-}
+    void showQueue() {
+        System.out.println("Booking Requests:");
 
-// Search service
-class SearchService {
-
-    void searchAvailableRooms(HashMap<String, Integer> inventory) {
-
-        System.out.println("Available Rooms:");
-
-        for(String key : inventory.keySet()) {
-
-            int available = inventory.get(key);
-
-            if(available > 0) {
-                System.out.println(key + " -> Available: " + available);
-            }
+        for(Reservation r : queue) {
+            System.out.println(r.customerName + " -> " + r.roomType);
         }
     }
 }
@@ -53,10 +34,12 @@ class SearchService {
 public class BookMyStayApp {
     public static void main(String[] args) {
 
-        RoomInventory inventory = new RoomInventory();
+        BookingQueue queue = new BookingQueue();
 
-        SearchService search = new SearchService();
+        queue.addRequest(new Reservation("John", "Single Room"));
+        queue.addRequest(new Reservation("Alice", "Double Room"));
+        queue.addRequest(new Reservation("Bob", "Suite Room"));
 
-        search.searchAvailableRooms(inventory.getInventory());
+        queue.showQueue();
     }
 }
