@@ -11,79 +11,48 @@ class Reservation {
     }
 }
 
-// Inventory
+// Inventory (shared resource)
 class RoomInventory {
 
     HashMap<String, Integer> inventory = new HashMap<>();
 
     RoomInventory() {
         inventory.put("Single Room", 1);
-        inventory.put("Double Room", 1);
-        inventory.put("Suite Room", 1);
     }
 
-    void reduceRoom(String type) {
-        inventory.put(type, inventory.get(type) - 1);
-    }
+    // synchronized method for thread safety
+    synchronized boolean bookRoom(String type) {
 
-    void increaseRoom(String type) {
-        inventory.put(type, inventory.get(type) + 1);
-    }
+        if(inventory.get(type) > 0) {
 
-    void display() {
-        System.out.println("Inventory: " + inventory);
+            inventory.put(type, inventory.get(type) - 1);
+
+            System.out.println(Thread.currentThread().getName() +
+                    " booked " + type);
+
+            return true;
+        }
+
+        System.out.println(Thread.currentThread().getName() +
+                " failed (No rooms)");
+
+        return false;
     }
 }
 
-// Booking + Cancellation Service
-class BookingService {
+// Booking Task (Thread)
+class BookingTask implements Runnable {
 
-    RoomInventory inventory = new RoomInventory();
+    RoomInventory inventory;
+    Reservation reservation;
 
-    // store allocated room IDs
-    Stack<String> rollbackStack = new Stack<>();
-
-    HashMap<String, String> bookingMap = new HashMap<>();
-
-    void bookRoom(Reservation r) {
-
-        if(inventory.inventory.get(r.roomType) > 0) {
-
-            String roomId = r.roomType + "-" + UUID.randomUUID();
-
-            bookingMap.put(r.customerName, roomId);
-            rollbackStack.push(roomId);
-
-            inventory.reduceRoom(r.roomType);
-
-            System.out.println("Booked: " + r.customerName + " -> " + roomId);
-
-        } else {
-            System.out.println("No rooms available for " + r.customerName);
-        }
+    BookingTask(RoomInventory inventory, Reservation reservation) {
+        this.inventory = inventory;
+        this.reservation = reservation;
     }
 
-    void cancelBooking(String customerName) {
-
-        if(!bookingMap.containsKey(customerName)) {
-            System.out.println("No booking found for " + customerName);
-            return;
-        }
-
-        String roomId = bookingMap.get(customerName);
-
-        // rollback using stack
-        if(!rollbackStack.isEmpty()) {
-            rollbackStack.pop();
-        }
-
-        String roomType = roomId.split("-")[0];
-
-        inventory.increaseRoom(roomType);
-
-        bookingMap.remove(customerName);
-
-        System.out.println("Cancelled booking for " + customerName);
+    public void run() {
+        inventory.bookRoom(reservation.roomType);
     }
 }
 
@@ -91,13 +60,15 @@ class BookingService {
 public class BookMyStayApp {
     public static void main(String[] args) {
 
-        BookingService service = new BookingService();
+        RoomInventory inventory = new RoomInventory();
 
-        service.bookRoom(new Reservation("John", "Single Room"));
-        service.bookRoom(new Reservation("Alice", "Double Room"));
+        Thread t1 = new Thread(new BookingTask(inventory,
+                new Reservation("John", "Single Room")));
 
-        service.cancelBooking("John");
+        Thread t2 = new Thread(new BookingTask(inventory,
+                new Reservation("Alice", "Single Room")));
 
-        service.inventory.display();
+        t1.start();
+        t2.start();
     }
 }
