@@ -1,12 +1,5 @@
 import java.util.*;
 
-// Custom Exception
-class InvalidBookingException extends Exception {
-    InvalidBookingException(String message) {
-        super(message);
-    }
-}
-
 // Reservation class
 class Reservation {
     String customerName;
@@ -24,43 +17,73 @@ class RoomInventory {
     HashMap<String, Integer> inventory = new HashMap<>();
 
     RoomInventory() {
-        inventory.put("Single Room", 2);
-        inventory.put("Double Room", 2);
+        inventory.put("Single Room", 1);
+        inventory.put("Double Room", 1);
         inventory.put("Suite Room", 1);
-    }
-
-    void validateRoom(String type) throws InvalidBookingException {
-        if(!inventory.containsKey(type)) {
-            throw new InvalidBookingException("Invalid Room Type: " + type);
-        }
-
-        if(inventory.get(type) <= 0) {
-            throw new InvalidBookingException("No rooms available for: " + type);
-        }
     }
 
     void reduceRoom(String type) {
         inventory.put(type, inventory.get(type) - 1);
     }
+
+    void increaseRoom(String type) {
+        inventory.put(type, inventory.get(type) + 1);
+    }
+
+    void display() {
+        System.out.println("Inventory: " + inventory);
+    }
 }
 
-// Booking Service
+// Booking + Cancellation Service
 class BookingService {
 
     RoomInventory inventory = new RoomInventory();
 
+    // store allocated room IDs
+    Stack<String> rollbackStack = new Stack<>();
+
+    HashMap<String, String> bookingMap = new HashMap<>();
+
     void bookRoom(Reservation r) {
 
-        try {
-            inventory.validateRoom(r.roomType);
+        if(inventory.inventory.get(r.roomType) > 0) {
+
+            String roomId = r.roomType + "-" + UUID.randomUUID();
+
+            bookingMap.put(r.customerName, roomId);
+            rollbackStack.push(roomId);
 
             inventory.reduceRoom(r.roomType);
 
-            System.out.println("Booking successful for " + r.customerName);
+            System.out.println("Booked: " + r.customerName + " -> " + roomId);
 
-        } catch (InvalidBookingException e) {
-            System.out.println("Booking failed: " + e.getMessage());
+        } else {
+            System.out.println("No rooms available for " + r.customerName);
         }
+    }
+
+    void cancelBooking(String customerName) {
+
+        if(!bookingMap.containsKey(customerName)) {
+            System.out.println("No booking found for " + customerName);
+            return;
+        }
+
+        String roomId = bookingMap.get(customerName);
+
+        // rollback using stack
+        if(!rollbackStack.isEmpty()) {
+            rollbackStack.pop();
+        }
+
+        String roomType = roomId.split("-")[0];
+
+        inventory.increaseRoom(roomType);
+
+        bookingMap.remove(customerName);
+
+        System.out.println("Cancelled booking for " + customerName);
     }
 }
 
@@ -71,7 +94,10 @@ public class BookMyStayApp {
         BookingService service = new BookingService();
 
         service.bookRoom(new Reservation("John", "Single Room"));
-        service.bookRoom(new Reservation("Alice", "Luxury Room")); // invalid
-        service.bookRoom(new Reservation("Bob", "Suite Room"));
+        service.bookRoom(new Reservation("Alice", "Double Room"));
+
+        service.cancelBooking("John");
+
+        service.inventory.display();
     }
 }
